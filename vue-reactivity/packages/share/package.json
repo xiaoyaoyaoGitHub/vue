@@ -1,0 +1,16 @@
+{
+  "name": "@wangly/share",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "buildOption": {
+    "name": "Share",
+    "formats": [
+      "esm-bundler"
+    ]
+  },
+  "dependencies": {
+    "loadsh": "^0.0.4",
+    "reactivity": "^1.0.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@wangly/reactivity",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "buildOption": {
+    "name": "VueReactivity",
+    "formats": [
+      "esm-bundler",
+      "cjs",
+      "global"
+    ]
+  },
+  "dependencies": {
+    "loadsh": "^0.0.4"
+  }
+}
