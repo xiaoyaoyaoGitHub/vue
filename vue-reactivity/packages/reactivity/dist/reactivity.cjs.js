@@ -1,9 +1,14 @@
 'use strict';
 
-var a = 3;
-var index = {
-    a: a
-};
+Object.defineProperty(exports, '__esModule', { value: true });
 
-module.exports = index;
+function reactive() {
+    console.log('reactive');
+}
+function shadowReactive() {
+    console.log('shadowReactive');
+}
+
+exports.reactive = reactive;
+exports.shadowReactive = shadowReactive;
 //# sourceMappingURL=reactivity.cjs.js.map

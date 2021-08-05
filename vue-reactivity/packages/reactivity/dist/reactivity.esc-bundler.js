@@ -1,7 +1,9 @@
-var a = 3;
-var index = {
-    a: a
-};
+function reactive() {
+    console.log('reactive');
+}
+function shadowReactive() {
+    console.log('shadowReactive');
+}
 
-export { index as default };
+export { reactive, shadowReactive };
 //# sourceMappingURL=reactivity.esc-bundler.js.map

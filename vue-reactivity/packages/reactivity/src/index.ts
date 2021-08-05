@@ -1,5 +1,1 @@
-let a = 3;
-
-export default {
-    a
-}
+export * from "./reactive"

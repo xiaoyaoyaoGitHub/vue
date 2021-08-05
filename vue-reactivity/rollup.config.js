@@ -37,7 +37,7 @@ console.log(path.resolve(packagDir, 'src/index.ts'));
 function createConfig(format, output) {
     output.name = packageOptions.name; // iife需要名称
     output.sourcemap = true; // 开启sourcemap
-    output.exports = 'default'
+    output.exports = 'auto'
     return {
         input: path.resolve(packagDir, 'src/index.ts'),
         output,

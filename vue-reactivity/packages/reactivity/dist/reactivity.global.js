@@ -1,12 +1,19 @@
-var VueReactivity = (function () {
+var VueReactivity = (function (exports) {
     'use strict';
 
-    var a = 3;
-    var index = {
-        a: a
-    };
+    function reactive() {
+        console.log('reactive');
+    }
+    function shadowReactive() {
+        console.log('shadowReactive');
+    }
 
-    return index;
+    exports.reactive = reactive;
+    exports.shadowReactive = shadowReactive;
 
-}());
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+    return exports;
+
+}({}));
 //# sourceMappingURL=reactivity.global.js.map
