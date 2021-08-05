@@ -1,4 +1,3 @@
-let b = 2
-export default {
-    b
+export function isObject(target){
+    return typeof target == 'object' && target !== null
 }
