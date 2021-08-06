@@ -1,0 +1,22 @@
+{
+  "name": "@wangly/pack1",
+  "version": "0.0.0",
+  "description": "测试1",
+  "author": "wangluyao <wangluyao959277@163.com>",
+  "homepage": "https://github.com/xiaoyaoyaoGitHub/vue#readme",
+  "license": "ISC",
+  "main": "lib/pack1.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/xiaoyaoyaoGitHub/vue/issues"
+  },
+  "dependencies": {
+    "loadsh": "^0.0.4"
+  }
+}
