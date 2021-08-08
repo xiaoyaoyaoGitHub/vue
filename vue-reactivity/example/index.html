@@ -19,12 +19,20 @@
     } = VueReactivity;
     const school = {
         name: 'wangly',
-        age: '18'
+        age: '18',
+        address:{
+            num:'677'
+        }
     }
-    const reactive1 = reactive(school);
-    const reactive2 = readonly(school);
-    reactive2.name = 'change wangly'
-    console.log(reactive1 === reactive2);
+
+    const proxyReactive = reactive(school);
+    const proxyReadonly = readonly(school);
+    // proxyReadonly.name = 123
+    console.log(proxyReadonly.address.num);
+    // const reactive1 = reactive(school);
+    // const reactive2 = readonly(school);
+    // reactive2.name = 'change wangly'
+    // console.log(reactive1 === reactive2);
 </script>
 
 </html>

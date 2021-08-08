@@ -7,17 +7,39 @@ var VueReactivity = (function (exports) {
     var extend = Object.assign;
 
     // get 方法生成函数
+    // vue3 针对的是对象来进行劫持,不用改写原来的对象,如果是嵌套,取值的时候才会进行代理
+    // vue2 针对的书属性劫持,改写了原来对象,首先递归
+    // vue3 可以对不存在的属性进行获取,也会走get方法,proxy支持数组
     function createGetter(isReadonly, shallow) {
-        return function () { };
+        if (isReadonly === void 0) { isReadonly = false; }
+        if (shallow === void 0) { shallow = false; }
+        return function (target, key, receiver) {
+            // 使用Reflect做映射取值
+            var res = Reflect.get(target, key, receiver);
+            // 如果属性不是深层代理则直接返回
+            if (shallow) {
+                return res;
+            }
+            // 如果res是对象,则对其进行再次代理
+            if (isObject(res)) {
+                // 懒递归,当我们去取值时,才去做递归,如果不取默认代理1层
+                return isReadonly ? readonly(res) : reactive(res);
+            }
+            return res;
+        };
     }
     // set 方法生成函数
     function createSetter(shallow) {
+        return function (target, key, value, receiver) {
+            var res = Reflect.set(target, key, value, receiver);
+            return res;
+        };
     }
     // get方法
     var get = createGetter();
-    var shallowGet = createGetter();
-    var readonlyGet = createGetter();
-    var shallowReadonlyGet = createGetter();
+    var shallowGet = createGetter(false, true);
+    var readonlyGet = createGetter(true);
+    var shallowReadonlyGet = createGetter(true, true);
     // set方法
     var set = createSetter();
     var shallowSet = createSetter();
