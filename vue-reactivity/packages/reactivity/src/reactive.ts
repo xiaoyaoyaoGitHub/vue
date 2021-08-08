@@ -1,14 +1,7 @@
-
 // import { isObject } from "./../../share/src/index.ts";  // 修改tsconfig.json配置文件,修改其中的path 和 baseurl
 import { isObject } from "@wangly/share";
 
-function mutableHandler() {}
-
-function shallowReactiveHandler() {}
-
-function readonlyHandler() {}
-
-function shallowReadonlyHandler() {}
+import { mutableHandler, shallowReactiveHandler, readonlyHandler, shallowReadonlyHandler } from "./baseHandlers"
 
 // 响应式
 export function reactive(target) {
@@ -22,12 +15,12 @@ export function shallowReactive(target) {
 
 // 只读
 export function readonly(target) {
-	return createReactiveObject(target, false, readonlyHandler);
+	return createReactiveObject(target, true, readonlyHandler);
 }
 
 // 浅读
 export function shallowReadonly(target) {
-	return createReactiveObject(target, false, shallowReadonlyHandler);
+	return createReactiveObject(target, true, shallowReadonlyHandler);
 }
 
 /**
@@ -36,9 +29,19 @@ export function shallowReadonly(target) {
  * @param isReadonly 是否为只读
  * @param baseHandler  针对不同的方式创建不同的代理对象
  */
-function createReactiveObject(target, isReadonly, baseHandler) {
-    if(!isObject(target)){
-        return target
-    }
-    console.log(target);
+
+const reactiveMap = new WeakMap(); //创建映射用作缓存,相对于map来说可以不用手动清除
+const readonlyMap = new WeakMap(); //readonly映射缓存
+function createReactiveObject(target, isReadonly = false, baseHandler) {
+	if (!isObject(target)) {
+		return target;
+	}
+	const proxyMap = isReadonly ? readonlyMap : reactiveMap;
+	// 判断是否有缓存,如果有则直接返回缓存对象不再拦截
+	if (proxyMap.get(target)) {
+		return proxyMap.get(target);
+	}
+	const proxyTarget = new Proxy(target, baseHandler); //创建proxy
+	proxyMap.set(target, proxyTarget);
+	return proxyTarget;
 }
