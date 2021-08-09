@@ -69,7 +69,9 @@ var VueReactivity = (function (exports) {
 	// 触发更新
 	function trigger(target, type, key, oldValue, newValue) {
 	    // console.log(oldValue, newValue, key);
+	    console.log(depMaps);
 	    var depsMap = depMaps.get(target);
+	    console.log(depsMap);
 	    if (!depsMap)
 	        return;
 	    // const effectsSet = depsMap.get(key) || [];
@@ -112,7 +114,8 @@ var VueReactivity = (function (exports) {
 	    return function (target, key, receiver) {
 	        // 使用Reflect做映射取值
 	        var res = Reflect.get(target, key, receiver);
-	        if (!isReadonly) {
+	        // 当属性值不是只读时收集依赖,(并且需要过滤掉类型是symbol的属性)
+	        if (!isReadonly && (typeof key !== 'symbol')) {
 	            // console.log('收集依赖');
 	            track(target, "get", key);
 	        }

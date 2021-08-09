@@ -55,7 +55,9 @@ export function track(target, type, key) {
 // 触发更新
 export function trigger(target, type, key, oldValue, newValue) {
 	// console.log(oldValue, newValue, key);
+    console.log(depMaps);
 	const depsMap = depMaps.get(target);
+    console.log(depsMap);
 	if (!depsMap) return;
 	// const effectsSet = depsMap.get(key) || [];
 	const willEffectsSet = new Set();
