@@ -15,20 +15,49 @@
 <script>
     const {
         reactive,
-        readonly
+        readonly,
+        effect
     } = VueReactivity;
     const school = {
         name: 'wangly',
         age: '18',
-        address:{
-            num:'677'
-        }
+        address: {
+            num: '677'
+        },
+        score: [
+            1, 2, 3, 45
+        ]
     }
 
     const proxyReactive = reactive(school);
-    const proxyReadonly = readonly(school);
-    // proxyReadonly.name = 123
-    console.log(proxyReadonly.address.num);
+    console.log(proxyReactive.name);
+
+    effect(() => {
+        console.log('触发更新:' + proxyReactive.name);
+        console.log('触发更新:' +proxyReactive.name);
+        console.log('触发更新:' +proxyReactive.address);
+        // effect(() => {
+        //     console.log(proxyReactive.address);
+        // })
+        console.log('触发更新:' +proxyReactive.score)
+    })
+
+    setTimeout(() => {
+        proxyReactive.name = 'wangly change'
+        proxyReactive.name = 'wangly change1'
+        proxyReactive.name = 'wangly change2'
+        proxyReactive.name = 'wangly change3'
+
+    }, 1000)
+
+    // const proxyReactive = reactive(school);
+    // proxyReactive.name = 'change wangly'
+    // proxyReactive.score.push(4455)
+    // proxyReactive.score[3] = 46
+
+    // const proxyReadonly = readonly(school);
+    // // proxyReadonly.name = 123
+    // console.log(proxyReactive.address.num);
     // const reactive1 = reactive(school);
     // const reactive2 = readonly(school);
     // reactive2.name = 'change wangly'

@@ -1,7 +1,83 @@
 function isObject(target) {
-    return typeof target == 'object' && target !== null;
+    return typeof target == "object" && target !== null;
 }
 var extend = Object.assign;
+var hasChange = function (oldValue, newValue) {
+    return oldValue !== newValue;
+};
+var isArray = Array.isArray;
+var hasOwn = function (target, key) {
+    return Object.prototype.hasOwnProperty.call(target, key);
+};
+var isIntegerKey = function (key) {
+    return parseInt(key) + "" === key;
+};
+
+function effect(fn, options) {
+    if (options === void 0) { options = {}; }
+    var effect = createReactiveEffect(fn, options);
+    if (!options.lazy) {
+        //立即执行一次
+        effect();
+    }
+    return effect;
+}
+var effectStack = []; //effect 栈
+var activeEffect; // 当前执行的effect
+var id = 0;
+function createReactiveEffect(fn, options) {
+    var effect = function reactiveEffect() {
+        try {
+            effectStack.push(effect);
+            activeEffect = effect;
+            return fn();
+        }
+        finally {
+            effectStack.pop();
+            activeEffect = effectStack[effectStack.length - 1];
+        }
+    };
+    effect.id = id++;
+    effect.options = options;
+    effect.deps = []; // 用来收集依赖
+    return effect;
+}
+// 创建weakMap, 收集依赖
+var depMaps = new WeakMap();
+function track(target, type, key) {
+    if (!activeEffect) {
+        //如果只是单纯的取值,则不需要保存
+        return;
+    }
+    var deps = depMaps.get(target);
+    if (!deps) {
+        //如果不存在则重新设置
+        depMaps.set(target, (deps = new Map()));
+    }
+    var dep = deps.get(key);
+    if (!dep) {
+        deps.set(key, (dep = new Set())); //使用Set是为了防止重复
+    }
+    if (!dep.has(activeEffect)) {
+        dep.add(activeEffect);
+    }
+    // console.log(depMaps);
+}
+// 触发更新
+function trigger(target, type, key, oldValue, newValue) {
+    // console.log(target, type, key, oldValue, newValue);
+    var depsMap = depMaps.get(target);
+    if (!depsMap)
+        return;
+    console.log(key);
+    var effectsSet = depsMap.get(key);
+    if (!effectsSet)
+        return;
+    var willEffectsSet = new Set();
+    effectsSet.forEach(function (effect) { return willEffectsSet.add(effect); });
+    willEffectsSet.forEach(function (effect) { return effect(); });
+    // console.log(target, type, key, oldValue, newValue);
+}
 
 // get 方法生成函数
 // vue3 针对的是对象来进行劫持,不用改写原来的对象,如果是嵌套,取值的时候才会进行代理
@@ -13,6 +89,10 @@ function createGetter(isReadonly, shallow) {
     return function (target, key, receiver) {
         // 使用Reflect做映射取值
         var res = Reflect.get(target, key, receiver);
+        if (!isReadonly) {
+            // console.log('收集依赖');
+            track(target, "get", key);
+        }
         // 如果属性不是深层代理则直接返回
         if (shallow) {
             return res;
@@ -26,9 +106,24 @@ function createGetter(isReadonly, shallow) {
     };
 }
 // set 方法生成函数
+// 如果是操作数组,如果发生length变化,则会触发两次set方法
 function createSetter(shallow) {
     return function (target, key, value, receiver) {
+        var oldValue = target[key];
+        // 是否存在当前设置的key 区分下数组的新增和修改
+        var hadKey = isArray(target) && isIntegerKey(key)
+            ? Number(key) < target.length
+            : hasOwn(target, key);
         var res = Reflect.set(target, key, value, receiver);
+        if (!hadKey) {
+            //是新增
+            // console.log("是新增");
+            trigger(target, "add", key);
+        }
+        else if (hasChange(oldValue, value)) {
+            // console.log("改变数值");
+            trigger(target, "set", key);
+        }
         return res;
     };
 }
@@ -100,5 +195,5 @@ function createReactiveObject(target, isReadonly, baseHandler) {
     return proxyTarget;
 }
 
-export { reactive, readonly, shallowReactive, shallowReadonly };
+export { effect, reactive, readonly, shallowReactive, shallowReadonly };
 //# sourceMappingURL=reactivity.esc-bundler.js.map
