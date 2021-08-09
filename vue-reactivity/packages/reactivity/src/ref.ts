@@ -23,6 +23,5 @@ class RefImpl {
 	set value(newValue) {
         this._value = newValue;
 		trigger(this, "set", "value", this.rawValue, newValue);
-		
 	}
 }
