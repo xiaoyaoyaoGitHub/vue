@@ -218,5 +218,31 @@ function createReactiveObject(target, isReadonly, baseHandler) {
     return proxyTarget;
 }
 
-export { effect, reactive, readonly, shallowReactive, shallowReadonly };
+function ref(value) {
+    return createRef(value);
+}
+function createRef(value) {
+    return new RefImpl(value);
+}
+var RefImpl = /** @class */ (function () {
+    function RefImpl(rawValue) {
+        this.rawValue = rawValue;
+        this._value = reactive(rawValue);
+    }
+    Object.defineProperty(RefImpl.prototype, "value", {
+        get: function () {
+            track(this, "get", "value");
+            return this._value;
+        },
+        set: function (newValue) {
+            this._value = newValue;
+            trigger(this, "set", "value", this.rawValue, newValue);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return RefImpl;
+}());
+
+export { effect, reactive, readonly, ref, shallowReactive, shallowReadonly };
 //# sourceMappingURL=reactivity.esc-bundler.js.map

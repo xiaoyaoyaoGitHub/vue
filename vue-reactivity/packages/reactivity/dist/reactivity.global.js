@@ -221,9 +221,36 @@ var VueReactivity = (function (exports) {
 	    return proxyTarget;
 	}
 
+	function ref(value) {
+	    return createRef(value);
+	}
+	function createRef(value) {
+	    return new RefImpl(value);
+	}
+	var RefImpl = /** @class */ (function () {
+	    function RefImpl(rawValue) {
+	        this.rawValue = rawValue;
+	        this._value = reactive(rawValue);
+	    }
+	    Object.defineProperty(RefImpl.prototype, "value", {
+	        get: function () {
+	            track(this, "get", "value");
+	            return this._value;
+	        },
+	        set: function (newValue) {
+	            this._value = newValue;
+	            trigger(this, "set", "value", this.rawValue, newValue);
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    return RefImpl;
+	}());
+
 	exports.effect = effect;
 	exports.reactive = reactive;
 	exports.readonly = readonly;
+	exports.ref = ref;
 	exports.shallowReactive = shallowReactive;
 	exports.shallowReadonly = shallowReadonly;
 

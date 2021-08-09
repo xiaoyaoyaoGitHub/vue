@@ -16,7 +16,8 @@
     const {
         reactive,
         readonly,
-        effect
+        effect,
+        ref
     } = VueReactivity;
     const school = {
         name: 'wangly',
@@ -30,6 +31,7 @@
     }
 
     const proxyReactive = reactive(school);
+    const show = ref(true)
 
     effect(() => {
         // console.log('触发更新:' + proxyReactive.name);
@@ -38,7 +40,8 @@
         // effect(() => {
         //     console.log(proxyReactive.address);
         // })
-        console.log('触发更新:' + proxyReactive.score)
+        // console.log('触发更新:' + proxyReactive.score)
+        console.log(show.value);
     }, {
         lazy: false
     })
@@ -50,8 +53,8 @@
         // proxyReactive.name = 'wangly change3'
         // proxyReactive.address.num = '234'
         // proxyReactive.score.unshift(345)
-        proxyReactive.score.push(345)
-
+        // proxyReactive.score.push(345)
+        show.value = false
         // proxyReactive.score.pop()
         // proxyReactive.score.shift()
         // proxyReactive.score[2] = 345
