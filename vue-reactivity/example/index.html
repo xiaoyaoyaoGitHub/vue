@@ -30,24 +30,32 @@
     }
 
     const proxyReactive = reactive(school);
-    console.log(proxyReactive.name);
 
     effect(() => {
-        console.log('触发更新:' + proxyReactive.name);
-        console.log('触发更新:' +proxyReactive.name);
-        console.log('触发更新:' +proxyReactive.address);
+        // console.log('触发更新:' + proxyReactive.name);
+        // console.log('触发更新:' +proxyReactive.name);
+        // console.log('触发更新:' + proxyReactive.address);
         // effect(() => {
         //     console.log(proxyReactive.address);
         // })
-        console.log('触发更新:' +proxyReactive.score)
+        console.log('触发更新:' + proxyReactive.score)
+    }, {
+        lazy: false
     })
-
+    // proxyReactive.score.length = 6
     setTimeout(() => {
-        proxyReactive.name = 'wangly change'
-        proxyReactive.name = 'wangly change1'
-        proxyReactive.name = 'wangly change2'
-        proxyReactive.name = 'wangly change3'
+        // proxyReactive.name = 'wangly change'
+        // proxyReactive.name = 'wangly change1'
+        // proxyReactive.name = 'wangly change2'
+        // proxyReactive.name = 'wangly change3'
+        // proxyReactive.address.num = '234'
+        // proxyReactive.score.unshift(345)
+        // proxyReactive.score.push(345)
 
+        // proxyReactive.score.pop()
+        // proxyReactive.score.shift()
+        // proxyReactive.score[2] = 345
+        // proxyReactive.score.length = 6
     }, 1000)
 
     // const proxyReactive = reactive(school);

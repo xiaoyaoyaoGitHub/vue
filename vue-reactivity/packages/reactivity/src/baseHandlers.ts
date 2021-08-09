@@ -45,13 +45,12 @@ function createSetter(shallow = false) {
 				? Number(key) < target.length
 				: hasOwn(target, key);
 		const res = Reflect.set(target, key, value, receiver);
-
 		if (!hadKey) {
 			//是新增
-			// console.log("是新增");
+			// console.log("是新增"); 
 			trigger(target, "add", key, oldValue, value);
 		} else if (hasChange(oldValue, value)) {
-			// console.log("改变数值");
+            console.log('set');
 			trigger(target, "set", key, oldValue, value);
 		}
 		return res;

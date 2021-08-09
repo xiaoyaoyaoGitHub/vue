@@ -18,12 +18,12 @@ var VueReactivity = (function (exports) {
 
 	function effect(fn, options) {
 	    if (options === void 0) { options = {}; }
-	    var effect = createReactiveEffect(fn, options);
+	    var effectReactive = createReactiveEffect(fn, options);
 	    if (!options.lazy) {
 	        //立即执行一次
-	        effect();
+	        effectReactive();
 	    }
-	    return effect;
+	    return effectReactive;
 	}
 	var effectStack = []; //effect 栈
 	var activeEffect; // 当前执行的effect
@@ -52,6 +52,7 @@ var VueReactivity = (function (exports) {
 	        //如果只是单纯的取值,则不需要保存
 	        return;
 	    }
+	    // debugger
 	    var deps = depMaps.get(target);
 	    if (!deps) {
 	        //如果不存在则重新设置
@@ -64,22 +65,41 @@ var VueReactivity = (function (exports) {
 	    if (!dep.has(activeEffect)) {
 	        dep.add(activeEffect);
 	    }
-	    // console.log(depMaps);
 	}
 	// 触发更新
 	function trigger(target, type, key, oldValue, newValue) {
-	    // console.log(target, type, key, oldValue, newValue);
+	    // console.log(oldValue, newValue, key);
 	    var depsMap = depMaps.get(target);
 	    if (!depsMap)
 	        return;
-	    console.log(key);
-	    var effectsSet = depsMap.get(key);
-	    if (!effectsSet)
-	        return;
+	    // const effectsSet = depsMap.get(key) || [];
 	    var willEffectsSet = new Set();
-	    effectsSet.forEach(function (effect) { return willEffectsSet.add(effect); });
+	    var add = function (effectsSet) {
+	        if (effectsSet) {
+	            effectsSet.forEach(function (effect) { return willEffectsSet.add(effect); });
+	        }
+	    };
+	    if (key === "length" && isArray(target)) { //如果数组直接修改length的长度
+	        depsMap.forEach(function (dep, setKey) {
+	            //查看当前监听里面是否含有比当前数组大的索引值,如果有则更新
+	            if (typeof setKey !== "symbol") {
+	                if (setKey > newValue || setKey === "length") {
+	                    add(dep);
+	                }
+	            }
+	        });
+	    }
+	    else {
+	        add(depsMap.get(key));
+	        if (isArray(target) && isIntegerKey(key)) {
+	            switch (type) {
+	                case "add": // 如果数组通过push增加,修改了length,则触发不了监听,需要手动触发
+	                    add(depsMap.get("length"));
+	                    break;
+	            }
+	        }
+	    }
 	    willEffectsSet.forEach(function (effect) { return effect(); });
-	    // console.log(target, type, key, oldValue, newValue);
 	}
 
 	// get 方法生成函数
@@ -120,12 +140,12 @@ var VueReactivity = (function (exports) {
 	        var res = Reflect.set(target, key, value, receiver);
 	        if (!hadKey) {
 	            //是新增
-	            // console.log("是新增");
-	            trigger(target, "add", key);
+	            // console.log("是新增"); 
+	            trigger(target, "add", key, oldValue, value);
 	        }
 	        else if (hasChange(oldValue, value)) {
-	            // console.log("改变数值");
-	            trigger(target, "set", key);
+	            console.log('set');
+	            trigger(target, "set", key, oldValue, value);
 	        }
 	        return res;
 	    };

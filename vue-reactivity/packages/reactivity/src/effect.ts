@@ -1,10 +1,12 @@
+import { isArray, isIntegerKey } from "@wangly/share";
+
 export function effect(fn, options: any = {}) {
-	const effect = createReactiveEffect(fn, options);
+	const effectReactive = createReactiveEffect(fn, options);
 	if (!options.lazy) {
 		//立即执行一次
-		effect();
+		effectReactive();
 	}
-	return effect;
+	return effectReactive;
 }
 
 const effectStack = []; //effect 栈
@@ -35,6 +37,7 @@ export function track(target, type, key) {
 		//如果只是单纯的取值,则不需要保存
 		return;
 	}
+	// debugger
 	let deps = depMaps.get(target);
 	if (!deps) {
 		//如果不存在则重新设置
@@ -47,19 +50,38 @@ export function track(target, type, key) {
 	if (!dep.has(activeEffect)) {
 		dep.add(activeEffect);
 	}
-	// console.log(depMaps);
 }
 
 // 触发更新
 export function trigger(target, type, key, oldValue, newValue) {
-	// console.log(target, type, key, oldValue, newValue);
+	// console.log(oldValue, newValue, key);
 	const depsMap = depMaps.get(target);
 	if (!depsMap) return;
-    console.log(key);
-	const effectsSet = depsMap.get(key);
-	if (!effectsSet) return;
+	// const effectsSet = depsMap.get(key) || [];
 	const willEffectsSet = new Set();
-	effectsSet.forEach(effect => willEffectsSet.add(effect));
-    willEffectsSet.forEach((effect:any) => effect())
-	// console.log(target, type, key, oldValue, newValue);
+	const add = (effectsSet) => {
+		if (effectsSet) {
+			effectsSet.forEach((effect: any) => willEffectsSet.add(effect));
+		}
+	};
+	if (key === "length" && isArray(target)) { //如果数组直接修改length的长度
+		depsMap.forEach((dep, setKey) => {
+			//查看当前监听里面是否含有比当前数组大的索引值,如果有则更新
+			if (typeof setKey !== "symbol") {
+				if (setKey > newValue || setKey === "length") {
+					add(dep);
+				}
+			}
+		});
+	} else {
+		add(depsMap.get(key));
+		if (isArray(target) && isIntegerKey(key)) {
+			switch (type) {
+				case "add":// 如果数组通过push增加,修改了length,则触发不了监听,需要手动触发
+					add(depsMap.get("length"));
+					break;
+			}
+		}
+	}
+	willEffectsSet.forEach((effect: any) => effect());
 }
