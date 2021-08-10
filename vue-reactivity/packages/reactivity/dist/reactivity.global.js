@@ -246,6 +246,40 @@ var VueReactivity = (function (exports) {
 	    });
 	    return RefImpl;
 	}());
+	function toRef(target, key) {
+	    return new ObjectRefImpl(target, key);
+	}
+	// 通过代理的方式去Proxy中取值
+	var ObjectRefImpl = /** @class */ (function () {
+	    function ObjectRefImpl(target, key) {
+	        this.target = target;
+	        this.key = key;
+	        this._v_isRef = true;
+	    }
+	    Object.defineProperty(ObjectRefImpl.prototype, "value", {
+	        get: function () {
+	            // console.log(`this.target`,this.target);
+	            // console.log(`[this.key]`,this.key);
+	            return this.target[this.key];
+	        },
+	        set: function (newValue) {
+	            this.target[this.key] = newValue;
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    return ObjectRefImpl;
+	}());
+	function toRefs(target) {
+	    var res = isArray(target)
+	        ? new Array(target.length)
+	        : Object.create(null);
+	    // 循环将每一项都设置toRef
+	    for (var key in target) {
+	        res[key] = toRef(target, key);
+	    }
+	    return res;
+	}
 
 	exports.effect = effect;
 	exports.reactive = reactive;
@@ -253,6 +287,8 @@ var VueReactivity = (function (exports) {
 	exports.ref = ref;
 	exports.shallowReactive = shallowReactive;
 	exports.shallowReadonly = shallowReadonly;
+	exports.toRef = toRef;
+	exports.toRefs = toRefs;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

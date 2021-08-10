@@ -17,7 +17,9 @@
         reactive,
         readonly,
         effect,
-        ref
+        ref,
+        toRef,
+        toRefs
     } = VueReactivity;
     const school = {
         name: 'wangly',
@@ -29,11 +31,30 @@
             1, 2, 3, 45
         ]
     }
+    const arrs = [1, 3, 4, 5]
 
     const proxyReactive = reactive(school);
-    const show = ref(true)
+    const arrsReactive = reactive(arrs);
+    // console.log(proxyReactive);
+    // const nameRef = toRef(proxyReactive, 'name')
+    const proxyToRefs = toRefs(proxyReactive);
+    const [a, b, c, d] = toRefs(arrsReactive)
+    console.log(a, b, c, d);
+    const {
+        name: nameToRef,
+        score: scoreToRef
+    } = proxyToRefs
+    console.log(nameToRef);
+    console.log(scoreToRef);
+    // console.log(nameRef);
+    // const show = ref(true)
 
     effect(() => {
+
+        console.log(a.value);
+
+        // console.log(nameRef.value);
+
         // console.log('触发更新:' + proxyReactive.name);
         // console.log('触发更新:' +proxyReactive.name);
         // console.log('触发更新:' + proxyReactive.address);
@@ -41,12 +62,17 @@
         //     console.log(proxyReactive.address);
         // })
         // console.log('触发更新:' + proxyReactive.score)
-        console.log(show.value);
+        // console.log(show.value);
     }, {
         lazy: false
     })
     // proxyReactive.score.length = 6
     setTimeout(() => {
+
+        a.value = 'a'
+
+        // nameRef.value = 'change wangly'
+
         // proxyReactive.name = 'wangly change'
         // proxyReactive.name = 'wangly change1'
         // proxyReactive.name = 'wangly change2'
@@ -54,7 +80,7 @@
         // proxyReactive.address.num = '234'
         // proxyReactive.score.unshift(345)
         // proxyReactive.score.push(345)
-        show.value = false
+        // show.value = false
         // proxyReactive.score.pop()
         // proxyReactive.score.shift()
         // proxyReactive.score[2] = 345

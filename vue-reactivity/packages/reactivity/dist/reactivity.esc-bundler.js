@@ -243,6 +243,40 @@ var RefImpl = /** @class */ (function () {
     });
     return RefImpl;
 }());
+function toRef(target, key) {
+    return new ObjectRefImpl(target, key);
+}
+// 通过代理的方式去Proxy中取值
+var ObjectRefImpl = /** @class */ (function () {
+    function ObjectRefImpl(target, key) {
+        this.target = target;
+        this.key = key;
+        this._v_isRef = true;
+    }
+    Object.defineProperty(ObjectRefImpl.prototype, "value", {
+        get: function () {
+            // console.log(`this.target`,this.target);
+            // console.log(`[this.key]`,this.key);
+            return this.target[this.key];
+        },
+        set: function (newValue) {
+            this.target[this.key] = newValue;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return ObjectRefImpl;
+}());
+function toRefs(target) {
+    var res = isArray(target)
+        ? new Array(target.length)
+        : Object.create(null);
+    // 循环将每一项都设置toRef
+    for (var key in target) {
+        res[key] = toRef(target, key);
+    }
+    return res;
+}
 
-export { effect, reactive, readonly, ref, shallowReactive, shallowReadonly };
+export { effect, reactive, readonly, ref, shallowReactive, shallowReadonly, toRef, toRefs };
 //# sourceMappingURL=reactivity.esc-bundler.js.map
