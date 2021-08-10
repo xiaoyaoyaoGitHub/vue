@@ -25,3 +25,5 @@ class RefImpl {
 
 这里我们利用了之前说过的`track`和`trigger`收集和触发依赖
 
+
+`computed`的简单实现
