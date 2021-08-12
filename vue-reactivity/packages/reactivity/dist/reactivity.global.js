@@ -81,7 +81,8 @@ var VueReactivity = (function (exports) {
 	            effectsSet.forEach(function (effect) { return willEffectsSet.add(effect); });
 	        }
 	    };
-	    if (key === "length" && isArray(target)) { //如果数组直接修改length的长度
+	    if (key === "length" && isArray(target)) {
+	        //如果数组直接修改length的长度
 	        depsMap.forEach(function (dep, setKey) {
 	            //查看当前监听里面是否含有比当前数组大的索引值,如果有则更新
 	            if (typeof setKey !== "symbol") {
@@ -101,7 +102,14 @@ var VueReactivity = (function (exports) {
 	            }
 	        }
 	    }
-	    willEffectsSet.forEach(function (effect) { return effect(); });
+	    willEffectsSet.forEach(function (effect) {
+	        if (effect.options.schedular) {
+	            effect.options.schedular(effect);
+	        }
+	        else {
+	            effect();
+	        }
+	    });
 	}
 
 	// get 方法生成函数
@@ -281,6 +289,60 @@ var VueReactivity = (function (exports) {
 	    return res;
 	}
 
+	var ComputedRefImpl = /** @class */ (function () {
+	    function ComputedRefImpl(getter, setter) {
+	        var _this = this;
+	        this.getter = getter;
+	        this.setter = setter;
+	        this.dirty = true; //防止多次取值
+	        this.effect = effect(getter, {
+	            lazy: true,
+	            // 如果设置了schedular,则更新的时候就不触发effect,而是触发schedular
+	            schedular: function (effect) {
+	                if (!_this.dirty) {
+	                    _this.dirty = true;
+	                    trigger(_this, 'set', 'value');
+	                }
+	            },
+	        });
+	    }
+	    Object.defineProperty(ComputedRefImpl.prototype, "value", {
+	        get: function () {
+	            if (this.dirty) { //如果依赖有更新,则重新取值,如果没有则直接返回缓存
+	                console.log('依赖有更新,重新取值');
+	                this._value = this.effect();
+	                this.dirty = false;
+	            }
+	            track(this, 'get', 'value'); // 当计算属性被其他effect引用时,也要收集依赖
+	            return this._value;
+	        },
+	        set: function (newValue) {
+	            this.setter(newValue);
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    return ComputedRefImpl;
+	}());
+	/**
+	 *
+	 * @param objectOptions
+	 *  可能是一个方法或者是一个对象里面设置了set/get方法
+	 */
+	function computed(objectOptions) {
+	    var getter, setter;
+	    if (isObject(objectOptions)) {
+	        getter = objectOptions.get;
+	        setter = objectOptions.set;
+	    }
+	    getter = objectOptions;
+	    setter = function () {
+	        console.log("no setter");
+	    };
+	    return new ComputedRefImpl(getter, setter);
+	}
+
+	exports.computed = computed;
 	exports.effect = effect;
 	exports.reactive = reactive;
 	exports.readonly = readonly;

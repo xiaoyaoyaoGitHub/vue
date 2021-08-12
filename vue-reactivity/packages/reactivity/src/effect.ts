@@ -53,11 +53,11 @@ export function track(target, type, key) {
 }
 
 // 触发更新
-export function trigger(target, type, key, oldValue, newValue) {
+export function trigger(target, type, key, oldValue?, newValue?) {
 	// console.log(oldValue, newValue, key);
-    console.log(depMaps);
+	console.log(depMaps);
 	const depsMap = depMaps.get(target);
-    console.log(depsMap);
+	console.log(depsMap);
 	if (!depsMap) return;
 	// const effectsSet = depsMap.get(key) || [];
 	const willEffectsSet = new Set();
@@ -66,7 +66,8 @@ export function trigger(target, type, key, oldValue, newValue) {
 			effectsSet.forEach((effect: any) => willEffectsSet.add(effect));
 		}
 	};
-	if (key === "length" && isArray(target)) { //如果数组直接修改length的长度
+	if (key === "length" && isArray(target)) {
+		//如果数组直接修改length的长度
 		depsMap.forEach((dep, setKey) => {
 			//查看当前监听里面是否含有比当前数组大的索引值,如果有则更新
 			if (typeof setKey !== "symbol") {
@@ -79,11 +80,17 @@ export function trigger(target, type, key, oldValue, newValue) {
 		add(depsMap.get(key));
 		if (isArray(target) && isIntegerKey(key)) {
 			switch (type) {
-				case "add":// 如果数组通过push增加,修改了length,则触发不了监听,需要手动触发
+				case "add": // 如果数组通过push增加,修改了length,则触发不了监听,需要手动触发
 					add(depsMap.get("length"));
 					break;
 			}
 		}
 	}
-	willEffectsSet.forEach((effect: any) => effect());
+	willEffectsSet.forEach((effect: any) => {
+		if (effect.options.schedular) {
+			effect.options.schedular(effect);
+		} else {
+			effect();
+		}
+	});
 }

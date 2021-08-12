@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="../node_modules/@wangly/reactivity/dist/reactivity.global.js"></script>
+
+<body>
+
+</body>
+<script>
+    const {
+        computed,
+        reactive,
+        effect
+    } = VueReactivity
+    const proxy = reactive({
+        baseName: 'wangly'
+    })
+    const newName = computed(() => {
+        console.log('computed name');
+        return proxy.baseName + 'change'
+    })
+    // console.log(newName.value);
+    console.log(newName.value);
+    console.log(newName.value);
+
+    proxy.baseName = 'outside wangly'
+    console.log(newName.value);
+    effect(() => {
+        console.log('computed in effect');
+        console.log(newName.value);
+    })
+
+    proxy.baseName = 'outside wangly'
+    
+</script>
+
+</html>
