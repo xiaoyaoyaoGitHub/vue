@@ -8,4 +8,4 @@ async function build(target) {
     await execa('rollup', ['-cw', '--environment', `TARGET:${target}`], { stdio: 'inherit' }) //监听改动
 }
 
-build('reactivity')
+build('runtime-dom')
