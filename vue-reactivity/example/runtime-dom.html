@@ -12,23 +12,31 @@
     <div id="app">233</div>
 </body>
 <script src="../node_modules/@wangly/runtime-dom/dist/runtime-dom.global.js"></script>
+<!-- <script src="./../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
 
 <script>
     const {
-        createApp
-    } = VueRuntimeDom;
+        createApp,
+        h
+    } = window.VueRuntimeDOM ? VueRuntimeDOM : VueRuntimeDom
+
     const App = {
         setup() {
-            return () => {
-                return {
-                    tag: 'h1',
-                    value: 1000
-                }
+            // 可能是对象也可能是函数 是函数则就作为render函数执行,如果不是函数则作为属性传入到render函数
+            return {
+                a: 100
             }
+        },
+        render() {
+            console.log(this.name);
+            // return h('div', this.a)
         }
     }
 
-    createApp(App).mount('#app')
+    createApp(App, {
+        name: 'wangly',
+        age: 17
+    }).mount('#app')
 </script>
 
 </html>
