@@ -17,6 +17,8 @@ var VueRuntimeDom = (function (exports) {
 	    return parseInt(key) + "" === key;
 	};
 	var isFunction = function (val) { return typeof val === "function"; };
+	// 是否是虚拟节点
+	var isVnode = function (val) { return val.__v_isVNode === true; };
 	// 按位或有一个是1 就是1
 	// 100
 	// 010
@@ -570,8 +572,32 @@ var VueRuntimeDom = (function (exports) {
 	function createRenderer(renderOptions) {
 	    return {
 	        createApp: createAppApi(render),
-	        render: render,
+	        render: render
 	    };
+	}
+
+	function h(type, propsOrChildren, children) {
+	    // console.log(arguments);
+	    var argLength = arguments.length;
+	    if (argLength == 2) {
+	        if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
+	            if (isVnode(propsOrChildren)) {
+	                //表示没有属性值
+	                return createVNode(type, null, [propsOrChildren]);
+	            }
+	            else {
+	                return createVNode(type, propsOrChildren); // 表示没有子元素
+	            }
+	        }
+	    }
+	    else if (argLength === 3) {
+	        if (isVnode(children)) {
+	            return createVNode(type, propsOrChildren, [children]);
+	        }
+	    }
+	    else if (argLength > 3) {
+	        return createVNode(type, propsOrChildren, Array.from(arguments).slice(2));
+	    }
 	}
 
 	// 增 删 改 查 元素中插入文本  文本的创建 文本元素内容的设置 获取父节点 获取相邻节点
@@ -723,9 +749,10 @@ var VueRuntimeDom = (function (exports) {
 	    };
 	    return app;
 	}
-	// from  core
 
 	exports.createApp = createApp;
+	exports.createRenderer = createRenderer;
+	exports.h = h;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

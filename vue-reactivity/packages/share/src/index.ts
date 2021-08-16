@@ -35,6 +35,8 @@ export const enum ShapeFlags {
 	COMPONENT_KEPT_ALIVE = 1 << 9, // 组件的keep-alive
 	COMPONENT = ShapeFlags.STATEFUL_COMPONENT | ShapeFlags.FUNCTIONAL_COMPONENT,
 }
+// 是否是虚拟节点
+export const isVnode = (val) => val.__v_isVNode === true;
 
 // 按位或有一个是1 就是1
 // 100

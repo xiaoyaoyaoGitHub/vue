@@ -4,8 +4,8 @@ import { extend } from "@wangly/share";
 import { createRenderer } from "@wangly/runtime-core";
 import { nodeOps } from "./nodeOps";
 import { patchProp } from "./patchProp";
-
 const renderOptions = extend(nodeOps, { patchProp });
+
 
 /**
  *  创建节点
@@ -27,4 +27,4 @@ export function createApp(rootComponent, rootProp = null) {
 	return app;
 }
 
-// from  core
+export * from "@wangly/runtime-core";

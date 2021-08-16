@@ -2,7 +2,6 @@ import { effect } from "@wangly/reactivity";
 import { ShapeFlags } from "@wangly/share";
 import { createAppApi } from "./apiCreateApp";
 import { setupComponent } from "./component";
-
 let uid = 0;
 
 /**
@@ -115,6 +114,6 @@ const render = (vnode, container) => {
 export function createRenderer(renderOptions) {
 	return {
 		createApp: createAppApi(render),
-		render,
+		render
 	};
 }
