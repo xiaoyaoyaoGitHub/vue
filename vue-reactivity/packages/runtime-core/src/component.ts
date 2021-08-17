@@ -66,6 +66,7 @@ export function setupStatefulComponent(instance) {
  */
 export function setupComponent(instance) {
 	const { props, children } = instance.vnode;
+	console.log(props,`props`);
 	// TODO  props是响应式
 	instance.props = props;
 	instance.slots = children;

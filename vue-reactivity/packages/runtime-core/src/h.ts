@@ -2,7 +2,7 @@ import { isArray, isObject, isVnode } from "@wangly/share";
 import { createVNode } from "./vnode";
 
 export function h(type, propsOrChildren, children) {
-	// console.log(arguments);
+	console.log(arguments);
 	const argLength = arguments.length;
 	if (argLength == 2) {
 		if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
@@ -12,11 +12,14 @@ export function h(type, propsOrChildren, children) {
 			} else {
 				return createVNode(type, propsOrChildren); // 表示没有子元素
 			}
+		} else {
+			return createVNode(type, null, propsOrChildren);
 		}
 	} else if (argLength === 3) {
 		if (isVnode(children)) {
-			return createVNode(type, propsOrChildren, [children]);
+			children = [children];
 		}
+		return createVNode(type, propsOrChildren, children);
 	} else if (argLength > 3) {
 		return createVNode(
 			type,

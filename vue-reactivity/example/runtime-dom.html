@@ -28,8 +28,11 @@
             }
         },
         render() {
-            // console.log(this.name);
-            return h('div', this.a)
+            return h('div', [h('h1', {
+                style: {
+                    color: 'yellow'
+                }
+            }, 'wangly')])
         }
     }
 

@@ -469,6 +469,7 @@ var VueRuntimeDom = (function (exports) {
 	 */
 	function setupComponent(instance) {
 	    var _a = instance.vnode, props = _a.props, children = _a.children;
+	    console.log(props, "props");
 	    // TODO  props是响应式
 	    instance.props = props;
 	    instance.slots = children;
@@ -478,106 +479,154 @@ var VueRuntimeDom = (function (exports) {
 	    setupStatefulComponent(instance);
 	}
 
-	var uid = 0;
-	/**
-	 * 创建对象实例
-	 * @param vnode 虚拟节点
-	 */
-	function createComponentInstance(vnode) {
-	    var instance = {
-	        uid: uid++,
-	        vnode: vnode,
-	        type: vnode.type,
-	        props: {},
-	        attrs: {},
-	        slots: {},
-	        setupState: {},
-	        proxy: null,
-	        emit: null,
-	        ctx: {},
-	        isMounted: false,
-	        subTree: null,
-	        render: null,
-	    };
-	    instance.ctx = { _: instance };
-	    return instance;
-	}
-	/**
-	 * 挂载
-	 * @param instance
-	 * @param container
-	 */
-	function setupRenderEffect(instance, container) {
-	    effect(function componentEffect() {
-	        if (!instance.isMounted) {
-	            console.log("第一次挂载");
-	            // 在vue中的render函数中,有个参数,是对当前实例的拦截的proxy
-	            instance.render.call(instance.proxy, instance.proxy);
+	function createRenderer(renderOptions) {
+	    var uid = 0;
+	    var hostInsert = renderOptions.insert; renderOptions.remove; var hostPatchProp = renderOptions.patchProp, hostCreateElement = renderOptions.createElement; renderOptions.createText; renderOptions.setText; var hostSetElementText = renderOptions.setElementText; renderOptions.parentNode; renderOptions.nextSibling;
+	    /**
+	     * 创建对象实例
+	     * @param vnode 虚拟节点
+	     */
+	    function createComponentInstance(vnode) {
+	        var instance = {
+	            uid: uid++,
+	            vnode: vnode,
+	            type: vnode.type,
+	            props: {},
+	            attrs: {},
+	            slots: {},
+	            setupState: {},
+	            proxy: null,
+	            emit: null,
+	            ctx: {},
+	            isMounted: false,
+	            subTree: null,
+	            render: null,
+	        };
+	        instance.ctx = { _: instance };
+	        return instance;
+	    }
+	    /**
+	     * 挂载
+	     * @param instance
+	     * @param container
+	     */
+	    function setupRenderEffect(instance, container) {
+	        effect(function componentEffect() {
+	            if (!instance.isMounted) {
+	                console.log("第一次挂载");
+	                // 在vue中的render函数中,有个参数,是对当前实例的拦截的proxy
+	                var subTree = (instance.subTree = instance.render.call(instance.proxy, instance.proxy));
+	                console.log(subTree);
+	                patch(null, subTree, container);
+	            }
+	            else {
+	                instance.isMounted = true;
+	                console.log("组件更新");
+	            }
+	        });
+	    }
+	    /**
+	     * 挂载组件
+	     * @param n2         新虚拟节点
+	     * @param container
+	     */
+	    function mountComponent(n2, container) {
+	        // 创建组件实例, 并将实例挂载到自己本身上
+	        var instance = (n2.instance = createComponentInstance(n2));
+	        // 处理实例参数
+	        setupComponent(instance);
+	        // 执行render 方法 劫持组件
+	        setupRenderEffect(instance, container);
+	    }
+	    /**
+	     * 组件处理
+	     * @param n1
+	     * @param n2
+	     * @param container
+	     */
+	    function processComponent(n1, n2, container) {
+	        if (!n1) {
+	            // 如果没有旧vode 则是挂载
+	            mountComponent(n2, container);
+	        }
+	    }
+	    function mountChildren(children, container) {
+	        console.log(children);
+	        for (var i = 0; i < children.length; i++) {
+	            patch(null, children[i], container);
+	        }
+	    }
+	    /**
+	     * 挂载节点
+	     * @param vnode
+	     * @param container
+	     */
+	    function mountElement(vnode, container) {
+	        var _a = vnode || {}, type = _a.type, props = _a.props, children = _a.children, shapeFlag = _a.shapeFlag;
+	        var el = (vnode.el = hostCreateElement(type));
+	        console.log("props", props);
+	        if (props) {
+	            for (var key in props) {
+	                hostPatchProp(el, key, null, props[key]);
+	            }
+	        }
+	        if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+	            console.log('处理children');
+	            // 如果子元素是数组
+	            mountChildren(children, el);
 	        }
 	        else {
-	            instance.isMounted = true;
-	            console.log("组件更新");
+	            hostSetElementText(el, children);
 	        }
-	    });
-	}
-	/**
-	 * 挂载组件
-	 * @param n2         新虚拟节点
-	 * @param container
-	 */
-	function mountComponent(n2, container) {
-	    // 创建组件实例, 并将实例挂载到自己本身上
-	    var instance = (n2.instance = createComponentInstance(n2));
-	    // 处理实例参数
-	    setupComponent(instance);
-	    // 执行render 方法 劫持组件
-	    setupRenderEffect(instance);
-	}
-	/**
-	 * 组件处理
-	 * @param n1
-	 * @param n2
-	 * @param container
-	 */
-	function processComponent(n1, n2, container) {
-	    if (!n1) {
-	        // 如果没有旧vode 则是挂载
-	        mountComponent(n2);
+	        // console.log(container);
+	        hostInsert(el, container);
 	    }
-	}
-	/**
-	 * 判断是否挂载还是更新
-	 * @param n1         旧虚拟节点
-	 * @param n2         新虚拟节点
-	 * @param container  挂载跟节点
-	 */
-	function patch(n1, n2, container) {
-	    // 判断新虚拟节点类型
-	    var shapeFlag = n2.shapeFlag;
-	    if (shapeFlag & 1 /* ELEMENT */) ;
-	    else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
-	        //组件类型
-	        processComponent(n1, n2);
+	    /**
+	     *
+	     * @param n1
+	     * @param n2
+	     * @param container
+	     */
+	    function processElement(n1, n2, container) {
+	        if (n1 === null) {
+	            mountElement(n2, container);
+	        }
 	    }
-	}
-	/**
-	 * render函数
-	 * @param vnode     虚拟节点
-	 * @param container 挂载跟节点
-	 */
-	var render = function (vnode, container) {
-	    // 对比新旧节点的不同
-	    patch(null, vnode);
-	};
-	function createRenderer(renderOptions) {
+	    /**
+	     * 判断是否挂载还是更新
+	     * @param n1         旧虚拟节点
+	     * @param n2         新虚拟节点
+	     * @param container  挂载跟节点
+	     */
+	    function patch(n1, n2, container) {
+	        // 判断新虚拟节点类型
+	        var shapeFlag = n2.shapeFlag;
+	        if (shapeFlag & 1 /* ELEMENT */) {
+	            //节点类型
+	            processElement(n1, n2, container);
+	        }
+	        else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
+	            //组件类型
+	            processComponent(n1, n2, container);
+	        }
+	    }
+	    /**
+	     * render函数
+	     * @param vnode     虚拟节点
+	     * @param container 挂载跟节点
+	     */
+	    var render = function (vnode, container) {
+	        // 对比新旧节点的不同
+	        patch(null, vnode, container);
+	    };
 	    return {
 	        createApp: createAppApi(render),
-	        render: render
+	        render: render,
 	    };
 	}
 
 	function h(type, propsOrChildren, children) {
-	    // console.log(arguments);
+	    console.log(arguments);
 	    var argLength = arguments.length;
 	    if (argLength == 2) {
 	        if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
@@ -589,11 +638,15 @@ var VueRuntimeDom = (function (exports) {
 	                return createVNode(type, propsOrChildren); // 表示没有子元素
 	            }
 	        }
+	        else {
+	            return createVNode(type, null, propsOrChildren);
+	        }
 	    }
 	    else if (argLength === 3) {
 	        if (isVnode(children)) {
-	            return createVNode(type, propsOrChildren, [children]);
+	            children = [children];
 	        }
+	        return createVNode(type, propsOrChildren, children);
 	    }
 	    else if (argLength > 3) {
 	        return createVNode(type, propsOrChildren, Array.from(arguments).slice(2));
@@ -602,7 +655,8 @@ var VueRuntimeDom = (function (exports) {
 
 	// 增 删 改 查 元素中插入文本  文本的创建 文本元素内容的设置 获取父节点 获取相邻节点
 	var nodeOps = {
-	    createElement: function (tag) { return document.createElement(tag); },
+	    // 增 删  改 查询 元素中插入文本  文本的创建  文本元素的内容设置  获取父亲  获取下一个元素
+	    createElement: function (tagName) { return document.createElement(tagName); },
 	    remove: function (child) { return child.parentNode && child.parentNode.removeChild(child); },
 	    insert: function (child, parent, anchor) {
 	        if (anchor === void 0) { anchor = null; }
@@ -612,8 +666,8 @@ var VueRuntimeDom = (function (exports) {
 	    setElementText: function (el, text) { return (el.textContent = text); },
 	    createText: function (text) { return document.createTextNode(text); },
 	    setText: function (node, text) { return (node.nodeValue = text); },
-	    getParent: function (node) { return node.parentNode; },
-	    getNextSibling: function (node) { return node.nextElementSibling; },
+	    parentNode: function (node) { return node.parentNode; },
+	    nextSibling: function (node) { return node.nextElementSibling; },
 	};
 
 	/**
@@ -646,10 +700,10 @@ var VueRuntimeDom = (function (exports) {
 	                    el.style[key] = "";
 	                }
 	            }
-	            // 循环新属性值 依次设置
-	            for (var key in next) {
-	                el.style[key] = next[key];
-	            }
+	        }
+	        // 循环新属性值 依次设置
+	        for (var key in next) {
+	            el.style[key] = next[key];
 	        }
 	    }
 	}
@@ -731,7 +785,7 @@ var VueRuntimeDom = (function (exports) {
 	};
 
 	// 对dom操作的整合,将这些api传入到core中调用, 统一不同平台调用方法
-	extend(nodeOps, { patchProp: patchProp });
+	var renderOptions = extend(nodeOps, { patchProp: patchProp });
 	/**
 	 *  创建节点
 	 * @param rootComponent  组件
@@ -739,7 +793,7 @@ var VueRuntimeDom = (function (exports) {
 	 */
 	function createApp(rootComponent, rootProp) {
 	    if (rootProp === void 0) { rootProp = null; }
-	    var app = createRenderer().createApp(rootComponent, rootProp);
+	    var app = createRenderer(renderOptions).createApp(rootComponent, rootProp);
 	    var mount = (app || {}).mount;
 	    // 重写mount
 	    app.mount = function (container) {

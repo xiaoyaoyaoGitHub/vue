@@ -28,10 +28,10 @@ function patchStyle(el, prev, next) {
 					el.style[key] = "";
 				}
 			}
-			// 循环新属性值 依次设置
-			for (let key in next) {
-				el.style[key] = next[key];
-			}
+		}
+		// 循环新属性值 依次设置
+		for (let key in next) {
+			el.style[key] = next[key];
 		}
 	}
 }
@@ -107,7 +107,7 @@ export const patchProp = (el, key, prev, next) => {
 				patchEvents(el, key, next);
 			} else {
 				// 其他属性
-                patchAttrs(el, key, next)
+				patchAttrs(el, key, next);
 			}
 	}
 };
