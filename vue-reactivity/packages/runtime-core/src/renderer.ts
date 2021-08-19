@@ -55,9 +55,10 @@ export function createRenderer(renderOptions) {
 					instance.proxy
 				));
 				console.log(subTree);
+				instance.isMounted = true;
 				patch(null, subTree, container);
 			} else {
-				instance.isMounted = true;
+				// instance.isMounted = true;
 				console.log("组件更新");
 			}
 		});
@@ -102,8 +103,8 @@ export function createRenderer(renderOptions) {
 	}
 
 	function mountChildren(children, container) {
-		console.log(children);
-		
+		console.log(`children`, children);
+
 		for (let i = 0; i < children.length; i++) {
 			patch(null, children[i], container);
 		}
@@ -117,25 +118,25 @@ export function createRenderer(renderOptions) {
 	function mountElement(vnode, container) {
 		const { type, props, children, shapeFlag } = vnode || {};
 		let el = (vnode.el = hostCreateElement(type));
-		console.log(`props`,props);
+		console.log(`props`, props);
 		if (props) {
 			for (let key in props) {
 				hostPatchProp(el, key, null, props[key]);
 			}
 		}
 		if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-			console.log('处理children');
+			console.log("处理children");
 			// 如果子元素是数组
 			mountChildren(children, el);
 		} else {
 			hostSetElementText(el, children);
 		}
 		// console.log(container);
-		hostInsert(el, container)
+		hostInsert(el, container);
 	}
 
 	/**
-	 *
+	 * 创建节点
 	 * @param n1
 	 * @param n2
 	 * @param container
@@ -163,6 +164,9 @@ export function createRenderer(renderOptions) {
 		} else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
 			//组件类型
 			processComponent(n1, n2, container);
+		} else {
+			// hostSetElementText(container, n2)
+			container.textContent = n2;
 		}
 	}
 

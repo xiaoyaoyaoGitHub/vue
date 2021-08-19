@@ -28,3 +28,4 @@ export function createApp(rootComponent, rootProp = null) {
 }
 
 export * from "@wangly/runtime-core";
+export * from "@wangly/reactivity"

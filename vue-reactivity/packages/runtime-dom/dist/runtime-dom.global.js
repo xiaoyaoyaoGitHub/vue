@@ -179,14 +179,19 @@ var VueRuntimeDom = (function (exports) {
 	}
 	// get方法
 	var get = createGetter();
-	createGetter(false, true);
+	var shallowGet = createGetter(false, true);
 	var readonlyGet = createGetter(true);
 	var shallowReadonlyGet = createGetter(true, true);
 	// set方法
 	var set = createSetter();
+	var shallowSet = createSetter();
 	var mutableHandler = {
 	    get: get,
 	    set: set,
+	};
+	var shallowReactiveHandler = {
+	    get: shallowGet,
+	    set: shallowSet,
 	};
 	var readonlySet = {
 	    set: function (target, key) {
@@ -196,7 +201,7 @@ var VueRuntimeDom = (function (exports) {
 	var readonlyHandler = extend({
 	    get: readonlyGet,
 	}, readonlySet);
-	extend({
+	var shallowReadonlyHandler = extend({
 	    get: shallowReadonlyGet,
 	}, readonlySet);
 
@@ -205,9 +210,17 @@ var VueRuntimeDom = (function (exports) {
 	function reactive(target) {
 	    return createReactiveObject(target, false, mutableHandler);
 	}
+	// 浅响应式
+	function shallowReactive(target) {
+	    return createReactiveObject(target, false, shallowReactiveHandler);
+	}
 	// 只读
 	function readonly(target) {
 	    return createReactiveObject(target, true, readonlyHandler);
+	}
+	// 浅读
+	function shallowReadonly(target) {
+	    return createReactiveObject(target, true, shallowReadonlyHandler);
 	}
 	/**
 	 *
@@ -232,7 +245,13 @@ var VueRuntimeDom = (function (exports) {
 	    return proxyTarget;
 	}
 
-	/** @class */ ((function () {
+	function ref(value) {
+	    return createRef(value);
+	}
+	function createRef(value) {
+	    return new RefImpl(value);
+	}
+	var RefImpl = /** @class */ (function () {
 	    function RefImpl(rawValue) {
 	        this.rawValue = rawValue;
 	        this._value = reactive(rawValue);
@@ -250,9 +269,12 @@ var VueRuntimeDom = (function (exports) {
 	        configurable: true
 	    });
 	    return RefImpl;
-	})());
+	}());
+	function toRef(target, key) {
+	    return new ObjectRefImpl(target, key);
+	}
 	// 通过代理的方式去Proxy中取值
-	/** @class */ ((function () {
+	var ObjectRefImpl = /** @class */ (function () {
 	    function ObjectRefImpl(target, key) {
 	        this.target = target;
 	        this.key = key;
@@ -271,9 +293,19 @@ var VueRuntimeDom = (function (exports) {
 	        configurable: true
 	    });
 	    return ObjectRefImpl;
-	})());
+	}());
+	function toRefs(target) {
+	    var res = isArray(target)
+	        ? new Array(target.length)
+	        : Object.create(null);
+	    // 循环将每一项都设置toRef
+	    for (var key in target) {
+	        res[key] = toRef(target, key);
+	    }
+	    return res;
+	}
 
-	/** @class */ ((function () {
+	var ComputedRefImpl = /** @class */ (function () {
 	    function ComputedRefImpl(getter, setter) {
 	        var _this = this;
 	        this.getter = getter;
@@ -307,7 +339,24 @@ var VueRuntimeDom = (function (exports) {
 	        configurable: true
 	    });
 	    return ComputedRefImpl;
-	})());
+	}());
+	/**
+	 *
+	 * @param objectOptions
+	 *  可能是一个方法或者是一个对象里面设置了set/get方法
+	 */
+	function computed(objectOptions) {
+	    var getter, setter;
+	    if (isObject(objectOptions)) {
+	        getter = objectOptions.get;
+	        setter = objectOptions.set;
+	    }
+	    getter = objectOptions;
+	    setter = function () {
+	        console.log("no setter");
+	    };
+	    return new ComputedRefImpl(getter, setter);
+	}
 
 	// 创建虚拟节点 描述真实dom内容的js对象
 	/**
@@ -517,10 +566,11 @@ var VueRuntimeDom = (function (exports) {
 	                // 在vue中的render函数中,有个参数,是对当前实例的拦截的proxy
 	                var subTree = (instance.subTree = instance.render.call(instance.proxy, instance.proxy));
 	                console.log(subTree);
+	                instance.isMounted = true;
 	                patch(null, subTree, container);
 	            }
 	            else {
-	                instance.isMounted = true;
+	                // instance.isMounted = true;
 	                console.log("组件更新");
 	            }
 	        });
@@ -551,7 +601,7 @@ var VueRuntimeDom = (function (exports) {
 	        }
 	    }
 	    function mountChildren(children, container) {
-	        console.log(children);
+	        console.log("children", children);
 	        for (var i = 0; i < children.length; i++) {
 	            patch(null, children[i], container);
 	        }
@@ -571,7 +621,7 @@ var VueRuntimeDom = (function (exports) {
 	            }
 	        }
 	        if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
-	            console.log('处理children');
+	            console.log("处理children");
 	            // 如果子元素是数组
 	            mountChildren(children, el);
 	        }
@@ -582,7 +632,7 @@ var VueRuntimeDom = (function (exports) {
 	        hostInsert(el, container);
 	    }
 	    /**
-	     *
+	     * 创建节点
 	     * @param n1
 	     * @param n2
 	     * @param container
@@ -608,6 +658,10 @@ var VueRuntimeDom = (function (exports) {
 	        else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
 	            //组件类型
 	            processComponent(n1, n2, container);
+	        }
+	        else {
+	            // hostSetElementText(container, n2)
+	            container.textContent = n2;
 	        }
 	    }
 	    /**
@@ -804,9 +858,18 @@ var VueRuntimeDom = (function (exports) {
 	    return app;
 	}
 
+	exports.computed = computed;
 	exports.createApp = createApp;
 	exports.createRenderer = createRenderer;
+	exports.effect = effect;
 	exports.h = h;
+	exports.reactive = reactive;
+	exports.readonly = readonly;
+	exports.ref = ref;
+	exports.shallowReactive = shallowReactive;
+	exports.shallowReadonly = shallowReadonly;
+	exports.toRef = toRef;
+	exports.toRefs = toRefs;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

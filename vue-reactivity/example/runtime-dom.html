@@ -17,22 +17,38 @@
 <script>
     const {
         createApp,
-        h
+        h,
+        reactive,
+        toRefs
     } = window.VueRuntimeDOM ? VueRuntimeDOM : VueRuntimeDom
 
     const App = {
         setup() {
             // 可能是对象也可能是函数 是函数则就作为render函数执行,如果不是函数则作为属性传入到render函数
+            const info = reactive({
+                name: 'wangly',
+                age: '18'
+            })
+
+            const handleClick = () => {
+                info.age++
+            }
             return {
-                a: 100
+                ...toRefs(info),
+                handleClick
             }
         },
-        render() {
-            return h('div', [h('h1', {
+        render({
+            handleClick,
+            name,
+            age
+        }) {
+            return h('div', [age.value, h('h1', {
                 style: {
                     color: 'yellow'
-                }
-            }, 'wangly')])
+                },
+                onClick: handleClick
+            }, name.value)])
         }
     }
 
