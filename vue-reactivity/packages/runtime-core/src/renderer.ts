@@ -1,5 +1,5 @@
 import { effect } from "@wangly/reactivity";
-import { ShapeFlags } from "@wangly/share";
+import { hasOwn, ShapeFlags } from "@wangly/share";
 import { createAppApi } from "./apiCreateApp";
 import { setupComponent } from "./component";
 
@@ -60,6 +60,13 @@ export function createRenderer(renderOptions) {
 			} else {
 				// instance.isMounted = true;
 				console.log("组件更新");
+				const prevTree = instance.subTree;
+				const nextTree = instance.render.call(
+					instance.proxy,
+					instance.proxy
+				);
+				// 进入新旧vnode节点比对
+				patch(prevTree, nextTree, container);
 			}
 		});
 	}
@@ -136,6 +143,41 @@ export function createRenderer(renderOptions) {
 	}
 
 	/**
+	 * 属性对比
+	 * @param el
+	 * @param oldProps
+	 * @param newProps
+	 */
+	function patchProps(el, oldProps, newProps) {
+		if (oldProps === newProps) return;
+		for (let key in newProps) {
+			const prev = oldProps[key];
+			const next = newProps[key];
+			if (prev !== next) {
+				hostPatchProp(el, key, prev, next);
+			}
+		}
+		for (let key in oldProps) {
+			if (!hasOwn(newProps, key)) {
+				hostPatchProp(el, key, oldProps[key], null);
+			}
+		}
+	}
+
+	/**
+	 * 对比新旧节点的属性/子节点
+	 * @param n1
+	 * @param n2
+	 * @param container
+	 */
+	function patchElement(n1, n2, container) {
+		let el = (n2.el = n1.el);
+		const oldProps = n1.props || {};
+		const newProps = n2.props || {};
+		patchProps(el, oldProps, newProps);
+	}
+
+	/**
 	 * 创建节点
 	 * @param n1
 	 * @param n2
@@ -146,7 +188,17 @@ export function createRenderer(renderOptions) {
 			mountElement(n2, container);
 		} else {
 			// 更新 diff 算法
+			patchElement(n1, n2, container);
 		}
+	}
+
+	/**
+	 * 判断新旧节点是否相同
+	 * @param n1 旧节点
+	 * @param n2 新节点
+	 */
+	function isSameVnode(n1, n2) {
+		return n1.type === n2.type && n1.key === n2.key;
 	}
 
 	/**
@@ -156,6 +208,10 @@ export function createRenderer(renderOptions) {
 	 * @param container  挂载跟节点
 	 */
 	function patch(n1, n2, container) {
+		// 判断节点是否相同,如果不同则直接删除旧节点
+		if (n1 && !isSameVnode(n1, n2)) {
+			n1 = null;
+		}
 		// 判断新虚拟节点类型
 		const { shapeFlag } = n2;
 		if (shapeFlag & ShapeFlags.ELEMENT) {

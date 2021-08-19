@@ -572,6 +572,10 @@ var VueRuntimeDom = (function (exports) {
 	            else {
 	                // instance.isMounted = true;
 	                console.log("组件更新");
+	                var prevTree = instance.subTree;
+	                var nextTree = instance.render.call(instance.proxy, instance.proxy);
+	                // 进入新旧vnode节点比对
+	                patch(prevTree, nextTree, container);
 	            }
 	        });
 	    }
@@ -632,6 +636,40 @@ var VueRuntimeDom = (function (exports) {
 	        hostInsert(el, container);
 	    }
 	    /**
+	     * 属性对比
+	     * @param el
+	     * @param oldProps
+	     * @param newProps
+	     */
+	    function patchProps(el, oldProps, newProps) {
+	        if (oldProps === newProps)
+	            return;
+	        for (var key in newProps) {
+	            var prev = oldProps[key];
+	            var next = newProps[key];
+	            if (prev !== next) {
+	                hostPatchProp(el, key, prev, next);
+	            }
+	        }
+	        for (var key in oldProps) {
+	            if (!hasOwn(newProps, key)) {
+	                hostPatchProp(el, key, oldProps[key], null);
+	            }
+	        }
+	    }
+	    /**
+	     * 对比新旧节点的属性/子节点
+	     * @param n1
+	     * @param n2
+	     * @param container
+	     */
+	    function patchElement(n1, n2, container) {
+	        var el = (n2.el = n1.el);
+	        var oldProps = n1.props || {};
+	        var newProps = n2.props || {};
+	        patchProps(el, oldProps, newProps);
+	    }
+	    /**
 	     * 创建节点
 	     * @param n1
 	     * @param n2
@@ -641,6 +679,18 @@ var VueRuntimeDom = (function (exports) {
 	        if (n1 === null) {
 	            mountElement(n2, container);
 	        }
+	        else {
+	            // 更新 diff 算法
+	            patchElement(n1, n2);
+	        }
+	    }
+	    /**
+	     * 判断新旧节点是否相同
+	     * @param n1 旧节点
+	     * @param n2 新节点
+	     */
+	    function isSameVnode(n1, n2) {
+	        return n1.type === n2.type && n1.key === n2.key;
 	    }
 	    /**
 	     * 判断是否挂载还是更新
@@ -649,6 +699,10 @@ var VueRuntimeDom = (function (exports) {
 	     * @param container  挂载跟节点
 	     */
 	    function patch(n1, n2, container) {
+	        // 判断节点是否相同,如果不同则直接删除旧节点
+	        if (n1 && !isSameVnode(n1, n2)) {
+	            n1 = null;
+	        }
 	        // 判断新虚拟节点类型
 	        var shapeFlag = n2.shapeFlag;
 	        if (shapeFlag & 1 /* ELEMENT */) {
