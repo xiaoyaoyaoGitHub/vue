@@ -9,6 +9,7 @@ export function createAppApi(render) {
 			_container: null,
 			mount(container) {
 				// 根据用户传入的属性创建一个虚拟节点
+				console.log(rootComponent);
 				const vNode = createVNode(rootComponent, rootProp);
 				console.log(vNode);
 				// 更新节点的_container

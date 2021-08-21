@@ -378,6 +378,7 @@ var VueRuntimeDom = (function (exports) {
 	        type: type,
 	        props: props,
 	        children: children,
+	        key: props && props.key,
 	        el: null,
 	        component: null,
 	        shapeFlag: shapeFlag,
@@ -411,6 +412,7 @@ var VueRuntimeDom = (function (exports) {
 	            _container: null,
 	            mount: function (container) {
 	                // 根据用户传入的属性创建一个虚拟节点
+	                console.log(rootComponent);
 	                var vNode = createVNode(rootComponent, rootProp);
 	                console.log(vNode);
 	                // 更新节点的_container
@@ -530,7 +532,7 @@ var VueRuntimeDom = (function (exports) {
 
 	function createRenderer(renderOptions) {
 	    var uid = 0;
-	    var hostInsert = renderOptions.insert; renderOptions.remove; var hostPatchProp = renderOptions.patchProp, hostCreateElement = renderOptions.createElement; renderOptions.createText; renderOptions.setText; var hostSetElementText = renderOptions.setElementText; renderOptions.parentNode; renderOptions.nextSibling;
+	    var hostInsert = renderOptions.insert, hostRemove = renderOptions.remove, hostPatchProp = renderOptions.patchProp, hostCreateElement = renderOptions.createElement; renderOptions.createText; renderOptions.setText; var hostSetElementText = renderOptions.setElementText; renderOptions.parentNode; renderOptions.nextSibling;
 	    /**
 	     * 创建对象实例
 	     * @param vnode 虚拟节点
@@ -565,7 +567,7 @@ var VueRuntimeDom = (function (exports) {
 	                console.log("第一次挂载");
 	                // 在vue中的render函数中,有个参数,是对当前实例的拦截的proxy
 	                var subTree = (instance.subTree = instance.render.call(instance.proxy, instance.proxy));
-	                console.log(subTree);
+	                console.log("subTree", subTree);
 	                instance.isMounted = true;
 	                patch(null, subTree, container);
 	            }
@@ -604,10 +606,10 @@ var VueRuntimeDom = (function (exports) {
 	            mountComponent(n2, container);
 	        }
 	    }
-	    function mountChildren(children, container) {
+	    function mountChildren(children, container, auchor) {
 	        console.log("children", children);
 	        for (var i = 0; i < children.length; i++) {
-	            patch(null, children[i], container);
+	            patch(null, children[i], container, auchor);
 	        }
 	    }
 	    /**
@@ -615,10 +617,10 @@ var VueRuntimeDom = (function (exports) {
 	     * @param vnode
 	     * @param container
 	     */
-	    function mountElement(vnode, container) {
+	    function mountElement(vnode, container, auchor) {
 	        var _a = vnode || {}, type = _a.type, props = _a.props, children = _a.children, shapeFlag = _a.shapeFlag;
 	        var el = (vnode.el = hostCreateElement(type));
-	        console.log("props", props);
+	        // console.log(`props`, shapeFlag & ShapeFlags.TEXT_CHILDREN);
 	        if (props) {
 	            for (var key in props) {
 	                hostPatchProp(el, key, null, props[key]);
@@ -627,13 +629,12 @@ var VueRuntimeDom = (function (exports) {
 	        if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
 	            console.log("处理children");
 	            // 如果子元素是数组
-	            mountChildren(children, el);
+	            mountChildren(children, el, auchor);
 	        }
 	        else {
 	            hostSetElementText(el, children);
 	        }
-	        // console.log(container);
-	        hostInsert(el, container);
+	        hostInsert(el, container, auchor);
 	    }
 	    /**
 	     * 属性对比
@@ -658,16 +659,91 @@ var VueRuntimeDom = (function (exports) {
 	        }
 	    }
 	    /**
+	     * 数组子节点比较
+	     * @param c1
+	     * @param c2
+	     * @param container
+	     */
+	    function patchKeyedChildren(c1, c2, container) {
+	        var i = 0;
+	        var e1 = c1.length - 1;
+	        var e2 = c2.length - 1;
+	        // 从前往后比较
+	        while (i <= e1 && i <= e2) {
+	            if (isSameVnode(c1[i], c2[i])) {
+	                // 如果是相同类型元素, 则比较属性和子节点
+	                patch(c1[i], c2[i], container);
+	            }
+	            else {
+	                break;
+	            }
+	            i++;
+	        }
+	        // 从后往前比较
+	        while (i <= e1 && i <= e2) {
+	            if (isSameVnode(c1[e1], c2[e2])) {
+	                patch(c1[e1], c2[e2], container);
+	            }
+	            else {
+	                break;
+	            }
+	            e1--;
+	            e2--;
+	        }
+	        // 有序比对
+	        if (i > e1) {
+	            //新的多,旧的少
+	            if (i <= e2) {
+	                var nextPos = e2 + 1;
+	                var anchor = nextPos < c2.length - 1 ? c2[nextPos].el : null;
+	                // 如果anchor 不为null,则是在当前元素添加
+	                while (i <= e2) {
+	                    patch(null, c2[i++], container, anchor);
+	                }
+	            }
+	        }
+	    }
+	    /**
+	     * 对比子节点
+	     * @param n1   旧节点
+	     * @param n2   新节点
+	     * @param container
+	     */
+	    function patchChildren(n1, n2, container, auchor) {
+	        var c1 = n1.children;
+	        var c2 = n2.children;
+	        var prevShageFlag = n1.shapeFlag;
+	        var shapeFlag = n2.shapeFlag;
+	        // 1. 当前子节点是文本,则直接替换
+	        if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+	            hostSetElementText(container, c2);
+	        }
+	        else {
+	            // 当前子节点是数组
+	            if (prevShageFlag & 16 /* ARRAY_CHILDREN */) {
+	                //之前的子节点也是数组
+	                patchKeyedChildren(c1, c2, container);
+	            }
+	            else {
+	                // 之前子节点是文本
+	                hostSetElementText(container, ""); // 清空之前节点
+	                mountChildren(c2, container, auchor); //挂载当前子节点
+	            }
+	        }
+	    }
+	    /**
 	     * 对比新旧节点的属性/子节点
 	     * @param n1
 	     * @param n2
 	     * @param container
 	     */
-	    function patchElement(n1, n2, container) {
+	    function patchElement(n1, n2, container, auchor) {
 	        var el = (n2.el = n1.el);
 	        var oldProps = n1.props || {};
 	        var newProps = n2.props || {};
-	        patchProps(el, oldProps, newProps);
+	        patchProps(el, oldProps, newProps); //对比属性
+	        // 对比子节点
+	        patchChildren(n1, n2, el, auchor);
 	    }
 	    /**
 	     * 创建节点
@@ -675,13 +751,13 @@ var VueRuntimeDom = (function (exports) {
 	     * @param n2
 	     * @param container
 	     */
-	    function processElement(n1, n2, container) {
+	    function processElement(n1, n2, container, auchor) {
 	        if (n1 === null) {
-	            mountElement(n2, container);
+	            mountElement(n2, container, auchor);
 	        }
 	        else {
 	            // 更新 diff 算法
-	            patchElement(n1, n2);
+	            patchElement(n1, n2, container, auchor);
 	        }
 	    }
 	    /**
@@ -690,7 +766,7 @@ var VueRuntimeDom = (function (exports) {
 	     * @param n2 新节点
 	     */
 	    function isSameVnode(n1, n2) {
-	        return n1.type === n2.type && n1.key === n2.key;
+	        return n1.type == n2.type && n1.key == n2.key;
 	    }
 	    /**
 	     * 判断是否挂载还是更新
@@ -698,24 +774,26 @@ var VueRuntimeDom = (function (exports) {
 	     * @param n2         新虚拟节点
 	     * @param container  挂载跟节点
 	     */
-	    function patch(n1, n2, container) {
+	    function patch(n1, n2, container, auchor) {
+	        if (auchor === void 0) { auchor = null; }
 	        // 判断节点是否相同,如果不同则直接删除旧节点
 	        if (n1 && !isSameVnode(n1, n2)) {
+	            hostRemove(container);
 	            n1 = null;
 	        }
 	        // 判断新虚拟节点类型
 	        var shapeFlag = n2.shapeFlag;
 	        if (shapeFlag & 1 /* ELEMENT */) {
 	            //节点类型
-	            processElement(n1, n2, container);
+	            processElement(n1, n2, container, auchor);
 	        }
 	        else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
 	            //组件类型
 	            processComponent(n1, n2, container);
 	        }
 	        else {
-	            // hostSetElementText(container, n2)
-	            container.textContent = n2;
+	            // 直接是文本
+	            container.textContent = container.textContent + n2;
 	        }
 	    }
 	    /**

@@ -22,6 +22,7 @@ export function createVNode(type, props, children = null) {
 		type, // 对组件而言就是一个对象
 		props,
 		children,
+		key: props && props.key,
 		el: null, // 对应真实节点
 		component: null, // 组件实例
 		shapeFlag, // 类型
