@@ -56,6 +56,7 @@
                 return h('ul',[
                     h('li',{key:'A'},'A'),
                     h('li',{key:'B'},'B'),
+                    h('li',{key:'E'},'E'),
                     h('li',{key:'C'},'C'),
                     h('li',{key:'D'},'D'),
 
@@ -63,12 +64,11 @@
             } else {
                 return h('ul',[
                     h('li',{key:'A'},'A'),
+                    h('li',{key:'C', style:{color:'red'}},'C'),
+                    h('li',{key:'F'},'F'),
                     h('li',{key:'B'},'B'),
-                    h('li',{key:'E'},'E'),
-                    h('li',{key:'C'},'C'),
                     h('li',{key:'D'},'D'),
-
-                // ])
+                ])
                 // return h('div', {}, [h('span', {}, '345'), h('span', {}, '456')])
                 // return h('ul', {}, '234')
 

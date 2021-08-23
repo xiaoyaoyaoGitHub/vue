@@ -54,7 +54,7 @@ export function createRenderer(renderOptions) {
 					instance.proxy,
 					instance.proxy
 				));
-				console.log(`subTree`,subTree);
+				console.log(`subTree`, subTree);
 				instance.isMounted = true;
 				patch(null, subTree, container);
 			} else {
@@ -206,9 +206,39 @@ export function createRenderer(renderOptions) {
 			}
 		} else if (i > e2) {
 			// 老的多,新的少
+			while (i <= e1) {
+				unmount(c1[i++]);
+			}
 		} else {
 			// 乱序比对
+			let s1 = i; // 旧节点循环到的索引
+			let s2 = i; // 新节点循环到的索引
+			// 以新节点为映射表
+			const keyForNewNnode = new Map();
+			for (let i = s2; i <= e2; i++) {
+				const cvnode = c2[i];
+				// console.log(cvnode);
+				keyForNewNnode.set(cvnode.key, cvnode);
+			}
+			console.log(`keyForNewNnode`,keyForNewNnode);
+			// 循环旧节点,在映射表中查找
+			for (let i = s1; i <= e1; i++) {
+				const oldVnode = c1[i];
+				const baseKey = oldVnode.key;
+				const mapVnode = keyForNewNnode.get(baseKey);
+				console.log(`mapVnode`,mapVnode);
+				if (mapVnode === undefined) {
+					// 删除
+					unmount(oldVnode);
+				} else {
+					patch(oldVnode, mapVnode, container);
+				}
+			}
 		}
+	}
+
+	function unmount(vnode){
+		hostRemove(vnode.el);
 	}
 
 	/**
@@ -287,7 +317,7 @@ export function createRenderer(renderOptions) {
 	function patch(n1, n2, container, auchor = null) {
 		// 判断节点是否相同,如果不同则直接删除旧节点
 		if (n1 && !isSameVnode(n1, n2)) {
-			hostRemove(container)
+			unmount(n1);
 			n1 = null;
 		}
 		// 判断新虚拟节点类型
