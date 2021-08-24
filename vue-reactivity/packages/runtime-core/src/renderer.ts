@@ -217,21 +217,20 @@ export function createRenderer(renderOptions) {
 			const keyForNewNnode = new Map();
 			for (let i = s2; i <= e2; i++) {
 				const cvnode = c2[i];
-				// console.log(cvnode);
-				keyForNewNnode.set(cvnode.key, cvnode);
+				keyForNewNnode.set(cvnode.key, i);
 			}
 			console.log(`keyForNewNnode`,keyForNewNnode);
 			// 循环旧节点,在映射表中查找
 			for (let i = s1; i <= e1; i++) {
 				const oldVnode = c1[i];
 				const baseKey = oldVnode.key;
-				const mapVnode = keyForNewNnode.get(baseKey);
-				console.log(`mapVnode`,mapVnode);
-				if (mapVnode === undefined) {
+				const newIndex = keyForNewNnode.get(baseKey);
+				console.log(`mapVnode`,newIndex);
+				if (newIndex === undefined) {
 					// 删除
 					unmount(oldVnode);
 				} else {
-					patch(oldVnode, mapVnode, container);
+					patch(oldVnode, c2[newIndex], container);
 				}
 			}
 		}

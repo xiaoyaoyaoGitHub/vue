@@ -716,22 +716,21 @@ var VueRuntimeDom = (function (exports) {
 	            var keyForNewNnode = new Map();
 	            for (var i_1 = s2; i_1 <= e2; i_1++) {
 	                var cvnode = c2[i_1];
-	                // console.log(cvnode);
-	                keyForNewNnode.set(cvnode.key, cvnode);
+	                keyForNewNnode.set(cvnode.key, i_1);
 	            }
 	            console.log("keyForNewNnode", keyForNewNnode);
 	            // 循环旧节点,在映射表中查找
 	            for (var i_2 = s1; i_2 <= e1; i_2++) {
 	                var oldVnode = c1[i_2];
 	                var baseKey = oldVnode.key;
-	                var mapVnode = keyForNewNnode.get(baseKey);
-	                console.log("mapVnode", mapVnode);
-	                if (mapVnode === undefined) {
+	                var newIndex = keyForNewNnode.get(baseKey);
+	                console.log("mapVnode", newIndex);
+	                if (newIndex === undefined) {
 	                    // 删除
 	                    unmount(oldVnode);
 	                }
 	                else {
-	                    patch(oldVnode, mapVnode, container);
+	                    patch(oldVnode, c2[newIndex], container);
 	                }
 	            }
 	        }
