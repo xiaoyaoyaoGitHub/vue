@@ -679,6 +679,7 @@ var VueRuntimeDom = (function (exports) {
 	            }
 	            i++;
 	        }
+	        console.log('i', i);
 	        // 从后往前比较
 	        while (i <= e1 && i <= e2) {
 	            if (isSameVnode(c1[e1], c2[e2])) {
@@ -690,6 +691,8 @@ var VueRuntimeDom = (function (exports) {
 	            e1--;
 	            e2--;
 	        }
+	        console.log('e1', e1);
+	        console.log('e2', e2);
 	        // 有序比对
 	        if (i > e1) {
 	            //新的多,旧的少
@@ -719,18 +722,41 @@ var VueRuntimeDom = (function (exports) {
 	                keyForNewNnode.set(cvnode.key, i_1);
 	            }
 	            console.log("keyForNewNnode", keyForNewNnode);
+	            var toBePatch = e2 - s2 + 1;
+	            var newIndexToOldIndexMap = new Array(toBePatch).fill(0); //记录被patch过的节点
 	            // 循环旧节点,在映射表中查找
 	            for (var i_2 = s1; i_2 <= e1; i_2++) {
 	                var oldVnode = c1[i_2];
 	                var baseKey = oldVnode.key;
+	                // 旧节点在新节点中的位置索引
 	                var newIndex = keyForNewNnode.get(baseKey);
-	                console.log("mapVnode", newIndex);
 	                if (newIndex === undefined) {
 	                    // 删除
 	                    unmount(oldVnode);
 	                }
 	                else {
+	                    // 存储的是新节点中的节点对应旧节点位置的索引
+	                    newIndexToOldIndexMap[newIndex - s2] = i_2 + 1;
 	                    patch(oldVnode, c2[newIndex], container);
+	                }
+	            }
+	            console.log("newIndexToOldIndexMap", newIndexToOldIndexMap);
+	            // // 移动位置
+	            for (var i_3 = toBePatch - 1; i_3 >= 0; i_3--) {
+	                // console.log(newIndexToOldIndexMap[i]);
+	                var newCurrentIndex = i_3 + s2;
+	                var newChild = c2[newCurrentIndex];
+	                // 寻找当前节点的后面的节点插入
+	                var auchor = newCurrentIndex + 1 < c2.length
+	                    ? c2[newCurrentIndex + 1].el
+	                    : null;
+	                console.log("auchor", auchor);
+	                if (newIndexToOldIndexMap[i_3] === 0) {
+	                    // 新增
+	                    patch(null, newChild, container, auchor);
+	                }
+	                else {
+	                    hostInsert(newChild.el, container, auchor);
 	                }
 	            }
 	        }

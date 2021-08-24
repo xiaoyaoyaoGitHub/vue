@@ -183,6 +183,7 @@ export function createRenderer(renderOptions) {
 			}
 			i++;
 		}
+		console.log('i',i);
 		// 从后往前比较
 		while (i <= e1 && i <= e2) {
 			if (isSameVnode(c1[e1], c2[e2])) {
@@ -191,12 +192,15 @@ export function createRenderer(renderOptions) {
 				break;
 			}
 			e1--;
-			e2--;
+			e2--
 		}
+		console.log('e1',e1);
+		console.log('e2',e2);
+
 		// 有序比对
 		if (i > e1) {
 			//新的多,旧的少
-			if (i <= e2) {
+			if ( i<= e2) {
 				const nextPos = e2 + 1;
 				const anchor = nextPos < c2.length - 1 ? c2[nextPos].el : null;
 				// 如果anchor 不为null,则是在当前元素添加
@@ -220,23 +224,46 @@ export function createRenderer(renderOptions) {
 				keyForNewNnode.set(cvnode.key, i);
 			}
 			console.log(`keyForNewNnode`,keyForNewNnode);
+			const toBePatch = e2 - s2 + 1;
+			const newIndexToOldIndexMap = new Array(toBePatch).fill(0); //记录被patch过的节点
 			// 循环旧节点,在映射表中查找
 			for (let i = s1; i <= e1; i++) {
 				const oldVnode = c1[i];
 				const baseKey = oldVnode.key;
+				// 旧节点在新节点中的位置索引
 				const newIndex = keyForNewNnode.get(baseKey);
-				console.log(`mapVnode`,newIndex);
 				if (newIndex === undefined) {
 					// 删除
 					unmount(oldVnode);
 				} else {
+					// 存储的是新节点中的节点对应旧节点位置的索引
+					newIndexToOldIndexMap[newIndex - s2] = i + 1;
 					patch(oldVnode, c2[newIndex], container);
+				}
+			}
+			console.log(`newIndexToOldIndexMap`, newIndexToOldIndexMap);
+			// // 移动位置
+			for (let i = toBePatch - 1; i >= 0; i--) {
+				// console.log(newIndexToOldIndexMap[i]);
+				const newCurrentIndex = i + s2;
+				const newChild = c2[newCurrentIndex];
+				// 寻找当前节点的后面的节点插入
+				const auchor =
+					newCurrentIndex + 1 < c2.length
+						? c2[newCurrentIndex + 1].el
+						: null;
+				console.log(`auchor`,auchor);
+				if (newIndexToOldIndexMap[i] === 0) {
+					// 新增
+					patch(null, newChild, container, auchor);
+				} else {
+					hostInsert(newChild.el, container, auchor)
 				}
 			}
 		}
 	}
 
-	function unmount(vnode){
+	function unmount(vnode) {
 		hostRemove(vnode.el);
 	}
 
