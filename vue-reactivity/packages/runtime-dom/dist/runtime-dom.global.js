@@ -530,6 +530,57 @@ var VueRuntimeDom = (function (exports) {
 	    setupStatefulComponent(instance);
 	}
 
+	// const arr = [1, 2, 4, 5, 6, 4, 3, 12, 3, 45, 5]
+	function getSequence(arr) {
+	    const len = arr.length;
+	    let start, middle, end;
+	    const result = [0]; //放索引
+	    const p = arr.slice(0); //保存arr中每个元素排序后的前一个元素的索引
+	    const test = [arr[0]];
+	    for (let i = 1; i < len; i++) {
+	        const curr = arr[i];
+	        if (curr !== 0) {
+	            let resultLastIndex = result[result.length - 1];
+	            if (arr[resultLastIndex] < curr) {
+	                result.push(i);
+	                p[i] = resultLastIndex;
+	                continue
+	            }
+	            start = 0;
+	            end = result.length - 1;
+	            while (start < end) {
+	                middle = ((start + end) / 2) | 0;
+	                if (arr[result[middle]] < curr) {
+	                    start = middle + 1;
+	                } else {
+	                    end = middle;
+	                }
+	            }
+
+	            if (curr < arr[result[start]]) {
+	                if (start > 0) {
+	                    p[i] = result[start - 1];
+	                }
+	                result[start] = i;
+	                test[start] = curr;
+
+	            }
+	        }
+
+	    }
+	    let resultLen = result.length;
+	    let last = result[resultLen - 1];
+	    while (resultLen-- > 0) {
+	        result[resultLen] = arr[last];
+	        last = p[last];
+	    }
+	    // console.log(result);
+	    return result
+	}
+
+
+	// getSequence(arr)
+
 	function createRenderer(renderOptions) {
 	    var uid = 0;
 	    var hostInsert = renderOptions.insert, hostRemove = renderOptions.remove, hostPatchProp = renderOptions.patchProp, hostCreateElement = renderOptions.createElement; renderOptions.createText; renderOptions.setText; var hostSetElementText = renderOptions.setElementText; renderOptions.parentNode; renderOptions.nextSibling;
@@ -741,6 +792,9 @@ var VueRuntimeDom = (function (exports) {
 	                }
 	            }
 	            console.log("newIndexToOldIndexMap", newIndexToOldIndexMap);
+	            console.log(getSequence(newIndexToOldIndexMap));
+	            var longestSubsquence = getSequence(newIndexToOldIndexMap);
+	            var longestSubsquenceLastIndex = longestSubsquence.length - 1;
 	            // // 移动位置
 	            for (var i_3 = toBePatch - 1; i_3 >= 0; i_3--) {
 	                // console.log(newIndexToOldIndexMap[i]);
@@ -750,13 +804,18 @@ var VueRuntimeDom = (function (exports) {
 	                var auchor = newCurrentIndex + 1 < c2.length
 	                    ? c2[newCurrentIndex + 1].el
 	                    : null;
-	                console.log("auchor", auchor);
 	                if (newIndexToOldIndexMap[i_3] === 0) {
 	                    // 新增
 	                    patch(null, newChild, container, auchor);
 	                }
 	                else {
-	                    hostInsert(newChild.el, container, auchor);
+	                    // 如果不相同则移动,否则不移动
+	                    if (newIndexToOldIndexMap[i_3] !== longestSubsquence[longestSubsquenceLastIndex]) {
+	                        hostInsert(newChild.el, container, auchor);
+	                    }
+	                    else {
+	                        longestSubsquenceLastIndex--;
+	                    }
 	                }
 	            }
 	        }

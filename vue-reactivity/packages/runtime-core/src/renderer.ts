@@ -2,6 +2,7 @@ import { effect } from "@wangly/reactivity";
 import { hasOwn, ShapeFlags } from "@wangly/share";
 import { createAppApi } from "./apiCreateApp";
 import { setupComponent } from "./component";
+import { getSequence } from "./getSequence"
 
 export function createRenderer(renderOptions) {
 	let uid = 0;
@@ -242,6 +243,9 @@ export function createRenderer(renderOptions) {
 				}
 			}
 			console.log(`newIndexToOldIndexMap`, newIndexToOldIndexMap);
+			console.log(getSequence(newIndexToOldIndexMap));
+			const longestSubsquence = getSequence(newIndexToOldIndexMap);
+			let longestSubsquenceLastIndex = longestSubsquence.length - 1;
 			// // 移动位置
 			for (let i = toBePatch - 1; i >= 0; i--) {
 				// console.log(newIndexToOldIndexMap[i]);
@@ -252,12 +256,16 @@ export function createRenderer(renderOptions) {
 					newCurrentIndex + 1 < c2.length
 						? c2[newCurrentIndex + 1].el
 						: null;
-				console.log(`auchor`,auchor);
 				if (newIndexToOldIndexMap[i] === 0) {
 					// 新增
 					patch(null, newChild, container, auchor);
 				} else {
-					hostInsert(newChild.el, container, auchor)
+					// 如果不相同则移动,否则不移动
+					if(newIndexToOldIndexMap[i] !== longestSubsquence[longestSubsquenceLastIndex]){
+						hostInsert(newChild.el, container, auchor)
+					}else{
+						longestSubsquenceLastIndex--
+					}
 				}
 			}
 		}
